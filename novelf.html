@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Novel Formatter</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel-2: #1f2430;
+      --text: #eef2f7;
+      --muted: #a7b0c0;
+      --accent: #56b6c2;
+      --border: #2c3442;
+      --success: #7ccf8a;
+      --danger: #ff7a90;
+      --radius: 14px;
+      --shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", sans-serif;
+      background: linear-gradient(180deg, #0d1016 0%, #121722 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.8rem, 2.6vw, 2.6rem);
+    }
+
+    .lead {
+      margin: 0 0 24px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    button {
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 10px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: #081014;
+      border-color: transparent;
+      font-weight: 700;
+    }
+
+    button:hover { filter: brightness(1.06); }
+
+    .options {
+      margin-bottom: 16px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .options label {
+      margin-right: 16px;
+      cursor: pointer;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .panel {
+      background: rgba(23, 26, 33, 0.92);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .status {
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 68vh;
+      resize: vertical;
+      border: 0;
+      outline: 0;
+      padding: 18px;
+      background: transparent;
+      color: var(--text);
+      font-size: 1rem;
+      line-height: 1.9;
+      font-family: "Hiragino Mincho ProN", "Yu Mincho", "MS PMincho", serif;
+    }
+
+    .help {
+      margin-top: 18px;
+      color: var(--muted);
+      line-height: 1.8;
+      font-size: 0.95rem;
+    }
+
+    .ok { color: var(--success); }
+    .err { color: var(--danger); }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+      textarea { min-height: 40vh; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Novel Formatter</h1>
+    <p class="lead">
+      小説原稿をブラウザ上で整形します。会話ブロックの前後だけ空行を入れ、ブロック内やブロック同士の間の空行を詰めつつ、段落先頭の全角スペースやMarkdown見出しの除去などをオプションで切り替えできます。
+    </p>
+
+    <div class="toolbar">
+      <button class="primary" id="formatBtn">整形する</button>
+      <button id="copyBtn">結果をコピー</button>
+      <button id="swapBtn">結果を左へ戻す</button>
+      <button id="clearBtn">クリア</button>
+      <button id="downloadBtn">TXT保存</button>
+    </div>
+
+    <div class="options">
+      <label>
+        <input type="checkbox" id="optIndent" checked>
+        段落先頭に全角スペースを入れる
+      </label>
+      <label>
+        <input type="checkbox" id="optBlockBlank" checked>
+        会話ブロック前後に空行を入れる
+      </label>
+      <label>
+        <input type="checkbox" id="optTrimDialogueBlank" checked>
+        会話ブロック内／ブロック同士の間の空行を詰める
+      </label>
+      <label>
+        <input type="checkbox" id="optRemoveHeadings">
+        見出し記号（# / ## など）だけ消す
+      </label>
+    </div>
+
+    <section class="grid">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>入力</h2>
+          <span class="status" id="inputStatus">未整形</span>
+        </div>
+        <textarea id="inputText" placeholder="ここに小説原稿を貼り付けてください"></textarea>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h2>出力</h2>
+          <span class="status" id="outputStatus">待機中</span>
+        </div>
+        <textarea id="outputText" placeholder="整形結果がここに表示されます"></textarea>
+      </div>
+    </section>
+
+    <div class="help">
+      <div>・開き括弧: 「『（(【〈《〔［｛</div>
+      <div>・閉じ括弧: 」』）)】〉》〕］｝</div>
+      <div>・会話ブロック内／会話ブロックどうしの間の空行は、オプションON時に詰めます。</div>
+      <div>・連続空行は常に 1 行に圧縮します。</div>
+      <div>・見出し記号除去ON時は「# タイトル」→「タイトル」のように # 部分だけ消します。</div>
+    </div>
+  </main>
+
+  <script>
+    const FULLWIDTH_SPACE = '　';
+    const OPEN_BRACKETS = '「『（(【〈《〔［｛';
+    const CLOSE_BRACKETS = '」』）)】〉》〔］｝';
+
+    const inputText = document.getElementById('inputText');
+    const outputText = document.getElementById('outputText');
+    const inputStatus = document.getElementById('inputStatus');
+    const outputStatus = document.getElementById('outputStatus');
+
+    const optIndent = document.getElementById('optIndent');
+    const optBlockBlank = document.getElementById('optBlockBlank');
+    const optTrimDialogueBlank = document.getElementById('optTrimDialogueBlank');
+    const optRemoveHeadings = document.getElementById('optRemoveHeadings');
+
+    function isBlank(line) {
+      return line.trim() === '';
+    }
+
+    function startsWithOpenBracket(line) {
+      const stripped = line.replace(/^\s+/, '');
+      return stripped.length > 0 && OPEN_BRACKETS.includes(stripped[0]);
+    }
+
+    function isDialogueLine(line) {
+      const stripped = line.replace(/^\s+/, '');
+      return stripped.length > 0 && startsWithOpenBracket(stripped);
+    }
+
+    function addFullwidthIndent(line, enabled) {
+      const stripped = line.replace(/^\s+/, '');
+      if (!stripped) return '';
+      if (!enabled) return stripped;
+      if (stripped.startsWith(FULLWIDTH_SPACE)) return stripped;
+      return FULLWIDTH_SPACE + stripped;
+    }
+
+    // メイン整形ロジック
+    function formatNovelText(text) {
+      const rawLines = text.split(/\r?\n/);
+
+      const useIndent = optIndent.checked;
+      const useBlockBlank = optBlockBlank.checked;
+      const trimDialogueBlank = optTrimDialogueBlank.checked;
+      const removeHeadings = optRemoveHeadings.checked;
+
+      // 1. 前処理: 行末の空白を落とす＋必要なら見出し記号だけ取り除く
+      const lines = rawLines.map((l) => {
+        let line = l.replace(/\s+$/, '');
+
+        if (removeHeadings) {
+          // 行頭の空白を保持しつつ、Markdown見出しの # 部分だけ取り除く
+          // 例: "  ## タイトル" → "  タイトル"
+          line = line.replace(/^(\s*)#{1,6}\s+(.*)$/, '$1$2');
+        }
+
+        return line;
+      });
+
+      const result = [];
+      const n = lines.length;
+
+      for (let i = 0; i < n; i++) {
+        const line = lines[i];
+
+        const blank = isBlank(line);
+
+        // --- 空行処理 ---
+        if (blank) {
+          // 次の非空行を先読み
+          let j = i + 1;
+          let nextLogical = null;
+          while (j < n) {
+            if (!isBlank(lines[j])) {
+              nextLogical = lines[j];
+              break;
+            }
+            j++;
+          }
+
+          const nextIsDialogue =
+            nextLogical !== null && isDialogueLine(nextLogical);
+
+          // 会話ブロック内／ブロック同士の間の空行は、オプションONなら全部詰める
+          if (nextIsDialogue && trimDialogueBlank) {
+            continue;
+          }
+
+          // それ以外の空行は、単純な段落間空行として扱う
+          const prev = result.length > 0 ? result[result.length - 1] : '';
+          if (result.length > 0 && !isBlank(prev)) {
+            result.push('');
+          }
+          continue;
+        }
+
+        // --- 非空行 ---
+        const isDialogue = isDialogueLine(line);
+        const currentLine = addFullwidthIndent(line, useIndent);
+
+        // 前の非空行
+        let prevLogical = null;
+        for (let k = i - 1; k >= 0; k--) {
+          if (!isBlank(lines[k])) {
+            prevLogical = lines[k];
+            break;
+          }
+        }
+        const prevIsDialogue =
+          prevLogical !== null && isDialogueLine(prevLogical);
+
+        // 次の非空行
+        let nextLogical = null;
+        for (let k = i + 1; k < n; k++) {
+          if (!isBlank(lines[k])) {
+            nextLogical = lines[k];
+            break;
+          }
+        }
+        const nextIsDialogue =
+          nextLogical !== null && isDialogueLine(nextLogical);
+
+        // 会話ブロックの先頭／末尾
+        const isBlockHead = isDialogue && !prevIsDialogue;
+        const isBlockTail = isDialogue && !nextIsDialogue;
+
+        // 会話ブロックの最初の行の前に空行
+        if (useBlockBlank && isBlockHead) {
+          const prevOut = result.length > 0 ? result[result.length - 1] : '';
+          if (result.length > 0 && !isBlank(prevOut)) {
+            result.push('');
+          }
+        }
+
+        // 行本体
+        result.push(currentLine);
+
+        // 会話ブロックの最後の行の後に空行
+        if (useBlockBlank && isBlockTail) {
+          result.push('');
+        }
+      }
+
+      // 連続空行の圧縮＋前後の空行削除
+      const compressed = [];
+      let prevBlank = false;
+
+      for (const line of result) {
+        if (isBlank(line)) {
+          if (!prevBlank) compressed.push('');
+          prevBlank = true;
+        } else {
+          compressed.push(line);
+          prevBlank = false;
+        }
+      }
+
+      while (compressed.length > 0 && isBlank(compressed[0])) compressed.shift();
+      while (compressed.length > 0 && isBlank(compressed[compressed.length - 1])) {
+        compressed.pop();
+      }
+
+      return compressed.length ? compressed.join('\n') + '\n' : '';
+    }
+
+    // ボタン類
+    document.getElementById('formatBtn').addEventListener('click', () => {
+      const source = inputText.value;
+      const formatted = formatNovelText(source);
+      outputText.value = formatted;
+      inputStatus.textContent = source.trim()
+        ? '整形前テキストあり'
+        : '入力なし';
+      outputStatus.textContent = formatted ? '整形完了' : '出力なし';
+      outputStatus.className = 'status ok';
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(outputText.value);
+        outputStatus.textContent = 'コピーしました';
+        outputStatus.className = 'status ok';
+      } catch {
+        outputStatus.textContent = 'コピーに失敗しました';
+        outputStatus.className = 'status err';
+      }
+    });
+
+    document.getElementById('swapBtn').addEventListener('click', () => {
+      inputText.value = outputText.value;
+      inputStatus.textContent = inputText.value
+        ? '結果を入力へ戻しました'
+        : '入力なし';
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      inputText.value = '';
+      outputText.value = '';
+      inputStatus.textContent = '未整形';
+      outputStatus.textContent = '待機中';
+      outputStatus.className = 'status';
+    });
+
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      const blob = new Blob([outputText.value], {
+        type: 'text/plain;charset=utf-8',
+      });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'formatted_novel.txt';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      outputStatus.textContent = 'TXT保存を開始しました';
+      outputStatus.className = 'status ok';
+    });
+  </script>
+</body>
+</html>
