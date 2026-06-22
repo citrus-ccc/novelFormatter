@@ -1,5 +1,6 @@
-# novel
+# Novel Formatter
 
 ![demo](./assets/demo.gif)
 
-# novelf
+
+- カクヨムとエブリスタは全く同じ処理を行っています。
