@@ -1,5 +1,5 @@
 # novel
-https://imgur.com/a/ntl9HFp
+![demo](./assets/demo.gif)
 
 
 # novelf
