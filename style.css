@@ -1,0 +1,21 @@
+:root {
+    --bg: #0f1115; --panel-2: #1f2430; --text: #eef2f7; --muted: #a7b0c0; --accent: #56b6c2; --border: #2c3442; --success: #7ccf8a;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: sans-serif; background: #0d1016; color: var(--text); min-height: 100vh; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 24px; }
+.toolbar { display: flex; gap: 12px; margin-bottom: 8px; }
+button { border: 1px solid var(--border); background: var(--panel-2); color: var(--text); padding: 10px 16px; border-radius: 999px; cursor: pointer; }
+button.primary { background: var(--accent); color: #081014; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.panel { background: #171a21; border: 1px solid var(--border); border-radius: 14px; }
+.panel-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+textarea {
+    width: 100%; min-height: 68vh; border: 0; padding: 18px;
+    background: transparent; color: var(--text);
+    font-size: 1rem; line-height: 1.9;
+    /* フォントを明示的に指定 */
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", "MS Mincho", serif;
+    /* スペースの幅を崩す設定を解除 */
+    font-feature-settings: normal;
+}
