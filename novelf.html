@@ -10,14 +10,20 @@
 <main class="wrap">
   <h1>Novel Formatter</h1>
   <p class="lead">
-    小説原稿をブラウザ上で整形します。会話ブロックの前後だけ空行を入れ、ブロック内やブロック同士の間の空行を詰めつつ、段落先頭の全角スペースやMarkdown見出しの除去などをオプションで切り替えできます。
+    小説原稿をブラウザ上で整形・変換します。整形は以下のルールに従います。オプションでルールのON/OFFを切り替え可能です。
   </p>
-
+  <ul>
+    <li>会話の前後に空行を入れる</li>
+    <li>段落間の空行を詰める</li>
+    <li>段落先頭に全角スペースを入れる</li>
+  </ul>
   <div class="toolbar">
     <button class="primary" id="formatBtn">整形する</button>
-    <button id="convertNarouBtn">カクヨム→なろう変換</button>
-    <button id="convertKakuyomuBtn">なろう→カクヨム変換</button>
+    <button id="convertNarouBtn">なろう変換</button>
+    <button id="convertKakuyomuBtn">カクヨム変換</button>
+    <button id="convertEverystarBtn">エブリスタ変換</button>
     <button id="copyBtn">結果をコピー</button>
+    <button id="themeToggleBtn">☀️ ライトテーマ</button>
   </div>
 
   <div class="options">
