@@ -1,168 +1,255 @@
 :root {
-    /* デフォルト (ダークテーマ) */
-    --bg-gradient: linear-gradient(180deg, #0d1016 0%, #121722 100%);
-    --panel-bg: rgba(23, 26, 33, 0.92);
-    --bg: #0f1115;
-    --panel: #171a21;
-    --panel-2: #1f2430;
-    --text: #eef2f7;
-    --muted: #a7b0c0;
-    --accent: #56b6c2;
-    --border: #2c3442;
-    --success: #7ccf8a;
-    --danger: #ff7a90;
-    --radius: 14px;
-    --shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
-    --btn-text: #081014;
+  /* デフォルト (ダークテーマ) */
+  --bg-gradient: linear-gradient(180deg, #0d1016 0%, #121722 100%);
+  --panel-bg: rgba(23, 26, 33, 0.92);
+  --bg: #0f1115;
+  --panel: #171a21;
+  --panel-2: #1f2430;
+  --text: #eef2f7;
+  --muted: #a7b0c0;
+  --accent: #56b6c2;
+  --border: #2c3442;
+  --success: #7ccf8a;
+  --danger: #ff7a90;
+  --radius: 14px;
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  --btn-text: #081014;
+
+  /* モーダル用カラー */
+  --modal-bg: #1a1e27;
+  --modal-backdrop: rgba(0, 0, 0, 0.65);
 }
 
 body.light-theme {
-    /* ライトテーマ */
-    --bg-gradient: linear-gradient(180deg, #f4f7fa 0%, #e9ecef 100%);
-    --panel-bg: rgba(255, 255, 255, 0.92);
-    --bg: #f4f7fa;
-    --panel: #ffffff;
-    --panel-2: #e2e6eb;
-    --text: #2c3440;
-    --muted: #6c757d;
-    --accent: #3a97a5; /* 視認性のため少し濃い色に変更 */
-    --border: #d2d6db;
-    --success: #28a745;
-    --danger: #dc3545;
-    --shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
-    --btn-text: #ffffff;
+  /* ライトテーマ */
+  --bg-gradient: linear-gradient(180deg, #f4f7fa 0%, #e9ecef 100%);
+  --panel-bg: rgba(255, 255, 255, 0.92);
+  --bg: #f4f7fa;
+  --panel: #ffffff;
+  --panel-2: #e2e6eb;
+  --text: #2c3440;
+  --muted: #6c757d;
+  --accent: #3a97a5;
+  --border: #d2d6db;
+  --success: #28a745;
+  --danger: #dc3545;
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+  --btn-text: #ffffff;
+
+  /* モーダル用カラー */
+  --modal-bg: #ffffff;
+  --modal-backdrop: rgba(0, 0, 0, 0.35);
 }
 
 * {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", sans-serif;
-    background: var(--bg-gradient);
-    color: var(--text);
-    min-height: 100vh;
-    transition: background 0.3s ease, color 0.3s ease;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", sans-serif;
+  background: var(--bg-gradient);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 .wrap {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
 }
 
 h1 {
-    margin: 0 0 8px;
-    font-size: clamp(1.8rem, 2.6vw, 2.6rem);
+  margin: 0;
+  font-size: clamp(1.8rem, 2.6vw, 2.6rem);
 }
 
 .lead {
-    margin: 0 0 24px;
-    color: var(--muted);
-    line-height: 1.7;
+  margin: 8px 0 20px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.step-box {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--panel-bg);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.step-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+  color: var(--accent);
 }
 
 .toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
 }
 
 button {
-    border: 1px solid var(--border);
-    background: var(--panel-2);
-    color: var(--text);
-    padding: 10px 16px;
-    border-radius: 999px;
-    cursor: pointer;
-    font-size: 0.95rem;
-    transition: background 0.3s, color 0.3s, border-color 0.3s;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  padding: 10px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.1s;
 }
 
 button.primary {
-    background: var(--accent);
-    color: var(--btn-text);
-    border-color: transparent;
-    font-weight: 700;
+  background: var(--accent);
+  color: var(--btn-text);
+  border-color: transparent;
+  font-weight: 700;
 }
 
 button:hover {
-    filter: brightness(1.06);
+  filter: brightness(1.08);
+}
+
+button:active {
+  transform: translateY(1px);
 }
 
 .options {
-    margin-bottom: 16px;
-    color: var(--muted);
-    font-size: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  color: var(--text);
+  font-size: 0.92rem;
 }
 
 .options label {
-    margin-right: 16px;
-    cursor: pointer;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
 }
 
 .panel {
-    background: var(--panel-bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
 }
 
 .panel-header {
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
 }
 
 .panel-header h2 {
-    margin: 0;
-    font-size: 1rem;
+  margin: 0;
+  font-size: 1rem;
 }
 
 .status {
-    font-size: 0.88rem;
-    color: var(--muted);
+  font-size: 0.88rem;
+  color: var(--muted);
 }
 
 textarea {
-    width: 100%;
-    min-height: 68vh;
-    resize: vertical;
-    border: 0;
-    outline: 0;
-    padding: 18px;
-    background: transparent;
-    color: var(--text);
-    font-size: 1rem;
-    line-height: 1.9;
-    font-family: "Hiragino Mincho ProN", "Yu Mincho", "MS PMincho", serif;
-    transition: color 0.3s;
-}
-
-.help {
-    margin-top: 18px;
-    color: var(--muted);
-    line-height: 1.8;
-    font-size: 0.95rem;
+  width: 100%;
+  min-height: 68vh;
+  resize: vertical;
+  border: 0;
+  outline: 0;
+  padding: 18px;
+  background: transparent;
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.9;
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", "MS PMincho", serif;
+  transition: color 0.3s;
 }
 
 .ok { color: var(--success); }
 .err { color: var(--danger); }
 
-@media (max-width: 900px) {
-    .grid { grid-template-columns: 1fr; }
-    textarea { min-height: 40vh; }
+/* --- モーダルダイアログ (ヘルプ) --- */
+#helpModal {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  max-width: 620px;
+  width: 90%;
+  background: var(--modal-bg);
+  color: var(--text);
+  box-shadow: var(--shadow);
 }
+
+#helpModal::backdrop {
+  background: var(--modal-backdrop);
+  backdrop-filter: blur(3px);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.modal-body {
+  font-size: 0.92rem;
+  line-height: 1.75;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.modal-body h4 {
+  color: var(--accent);
+  margin: 18px 0 6px;
+}
+
+.modal-body h4:first-child {
+  margin-top: 0;
+}
+
+.modal-body ul, .modal-body ol {
+  padding-left: 20px;
+  margin: 0 0 14px;
+}
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+  textarea { min-height: 40vh; }
+  .toolbar button#copyBtn { margin-left: 0 !important; }
+}
+

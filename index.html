@@ -8,42 +8,66 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
 <main class="wrap">
+<div class="header-bar" style="display: flex; justify-content: space-between; align-items: center;">
   <h1>Novel Formatter</h1>
-  <p class="lead">
-    小説原稿をブラウザ上で整形・変換します。整形は以下のルールに従います。オプションでルールのON/OFFを切り替え可能です。
+  <div style="display: flex; gap: 8px;">
+    <button id="helpOpenBtn" style="font-size: 0.85rem; padding: 4px 10px;">❓ 使い方・ルール</button>
+    <button id="themeToggleBtn" style="font-size: 0.85rem; padding: 4px 10px;">☀️ ライトテーマ</button>
+  </div>
+</div>
+
+  <p class="lead" style="margin-bottom: 1rem; color: #888;">
+    小説原稿をWeb・縦書き用に自動整形します。
   </p>
-  <ul>
-    <li>会話の前後に空行を入れる</li>
-    <li>段落間の空行を詰める</li>
-    <li>段落先頭に全角スペースを入れる</li>
-  </ul>
-  <div class="toolbar">
-    <button class="primary" id="formatBtn">整形する</button>
-    <button id="convertNarouBtn">なろう変換</button>
-    <button id="convertKakuyomuBtn">カクヨム変換</button>
-    <button id="convertEverystarBtn">エブリスタ変換</button>
-    <button id="copyBtn">結果をコピー</button>
-    <button id="themeToggleBtn">☀️ ライトテーマ</button>
+
+  <!-- Step 1: オプション選択 -->
+  <div class="step-box" style="margin-bottom: 1rem; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+    <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 8px; color: #64b5f6;">
+      ① 設定を選ぶ
+    </div>
+    <div class="options" style="display: flex; flex-wrap: wrap; gap: 10px 16px; font-size: 0.9rem;">
+      <label>
+        <input type="checkbox" id="optIndent" checked>
+        段落先頭を字下げ（全角スペース）
+      </label>
+      <label>
+        <input type="checkbox" id="optParagraphBlank" checked>
+        段落間の空行を1行に統一（2行以上の連続空行を圧縮）
+      </label>
+      <label>
+        <input type="checkbox" id="optBlockBlank" checked>
+        会話ブロック前後に空行
+      </label>
+      <label>
+        <input type="checkbox" id="optTrimDialogueBlank" checked>
+        連続する会話の間の空行を詰める
+      </label>
+      <label>
+        <input type="checkbox" id="optVerticalMode">
+        <strong>縦書きモード</strong>（数字を漢数字・地の文空行を詰める）
+      </label>
+      <label>
+        <input type="checkbox" id="optRemoveHeadings">
+        見出し記号（#）を消す
+      </label>
+    </div>
   </div>
 
-  <div class="options">
-    <label>
-      <input type="checkbox" id="optIndent" checked>
-      段落先頭に全角スペースを入れる
-    </label>
-    <label>
-      <input type="checkbox" id="optBlockBlank" checked>
-      会話ブロック前後に空行を入れる
-    </label>
-    <label>
-      <input type="checkbox" id="optTrimDialogueBlank" checked>
-      会話ブロック内／ブロック同士の間の空行を詰める
-    </label>
-    <label>
-      <input type="checkbox" id="optRemoveHeadings">
-      見出し記号（# / ## など）だけ消す
-    </label>
+  <!-- Step 2: 整形・変換実行 -->
+  <div class="step-box" style="margin-bottom: 1.5rem;">
+    <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 8px; color: #64b5f6;">
+      ② 実行する
+    </div>
+    <div class="toolbar" style="display: flex; flex-wrap: wrap; gap: 8px;">
+      <button class="primary" id="formatBtn" style="font-weight: bold; padding: 8px 20px;">
+        ✨ 整形する
+      </button>
+      <button id="convertNarouBtn">なろう形式に変換</button>
+      <button id="convertKakuyomuBtn">カクヨム形式に変換</button>
+      <button id="copyBtn" style="margin-left: auto;">📋 結果をコピー</button>
+    </div>
   </div>
 
   <section class="grid">
@@ -64,13 +88,52 @@
     </div>
   </section>
 
-  <div class="help">
-    <div>・開き括弧: 「『（(【〈《〔［｛</div>
-    <div>・閉じ括弧: 」』）)】〉》〕］｝</div>
-    <div>・会話ブロック内／会話ブロックどうしの間の空行は、オプションON時に詰めます。</div>
-    <div>・連続空行は常に 1 行に圧縮します。</div>
-    <div>・見出し記号除去ON時は「# タイトル」→「タイトル」のように # 部分だけ消します。</div>
+
+<!-- フローティングヘルプウィンドウ -->
+<dialog id="helpModal" style="border: none; border-radius: 12px; padding: 24px; max-width: 600px; width: 90%; background: #1e1e24; color: #e0e0e0; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+    <h3 style="margin: 0; font-size: 1.2rem;">📖 使い方と整形ルール</h3>
+    <button id="helpCloseBtn" style="background: transparent; border: none; color: #aaa; font-size: 1.2rem; cursor: pointer;">✕</button>
   </div>
+  
+  <div style="font-size: 0.9rem; line-height: 1.7; max-height: 70vh; overflow-y: auto; padding-right: 8px;">
+    <h4 style="color: #64b5f6; margin-top: 0;">基本的な使い方</h4>
+    <ol style="padding-left: 20px; margin-bottom: 16px;">
+      <li>左側の「入力」欄に小説原稿を貼り付けます。</li>
+      <li>必要な整形オプションにチェックを入れます。</li>
+      <li>「✨ 整形する」または各種変換ボタンをクリックします。</li>
+      <li>「📋 結果をコピー」で整形結果を取得します。</li>
+    </ol>
+
+    <h4 style="color: #64b5f6;">各モードと変換ルール</h4>
+    <ul style="padding-left: 20px; margin-bottom: 16px;">
+      <li><strong>標準（横書きモード）:</strong>
+        <ul>
+          <li>Web文芸の標準に従い、数字は<strong>半角算用数字</strong>に統一されます（例: 2026年、10時30分、25歳）。</li>
+          <li>地の文同士の空行は統一的に詰められ、<strong>会話ブロックの前後のみ1行空行</strong>を挿入します。</li>
+        </ul>
+      </li>
+      <li><strong>縦書きモード（チェックON時）:</strong>
+        <ul>
+          <li>商業出版・文芸組版ルールに従い、数字を<strong>漢数字</strong>に自動変換します（例: 二〇二六年、十時三〇分、二十五歳）。</li>
+          <li>度量衡（100km、300m）や秒数（5秒）など、縦中横で活かすべき半角英数字はそのまま維持されます。</li>
+        </ul>
+      </li>
+      <li><strong>なろう形式 / カクヨム形式変換:</strong>
+        <ul>
+          <li>傍点（ルビ）の記法（カクヨムの《《傍点》》となろうの｜傍《・》｜点《・》）を相互に変換します。</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h4 style="color: #64b5f6;">記号の対応表</h4>
+    <p style="margin: 0;">
+      ・<strong>会話文として認識される括弧:</strong><br>
+      「『（(【〈《〔［｛
+    </p>
+  </div>
+</dialog>
+
 </main>
 
 <script src="script.js"></script>
