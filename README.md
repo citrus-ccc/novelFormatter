@@ -3,7 +3,7 @@
 小説原稿をWeb投稿（小説家になろう・カクヨム）や縦書き組版の業界標準ルールに沿って一括整形・変換するブラウザツールです。
 
 <!-- デモ動画（リポジトリのAssetsまたはIssueにドラッグ＆ドロップして生成されたURLを指定してください） -->
-https://github.com/user-attachments/assets/demo.mp4
+[demo](https://github.com/citrus-ccc/novelFormatter/tree/main/assets/NovelFormatter.mp4)
 
 ---
 
