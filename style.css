@@ -429,3 +429,20 @@ textarea.vertical-mode {
   white-space: pre-wrap;
   direction: ltr;
 }
+
+.vertical-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed; /* upright が指定されていたら mixed（初期値）に変更する */
+  font-feature-settings: "vert" 1, "vrt2" 1;
+  -webkit-font-feature-settings: "vert" 1, "vrt2" 1;
+
+  
+  /* 欧文フォントより前に日本語フォントを置く */
+  font-family: 
+    "Hiragino Mincho ProN", 
+    "Yu Mincho", 
+    "YuMincho", 
+    "Noto Serif JP", 
+    "BIZ UDMincho", 
+    serif;
+}
