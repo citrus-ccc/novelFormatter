@@ -418,7 +418,7 @@ textarea.vertical-mode {
   writing-mode: vertical-rl;
   -webkit-writing-mode: vertical-rl;
   text-orientation: upright;
-  -webkit-text-orientation: upright;
+  /* -webkit-text-orientation: upright; */
   font-feature-settings: "vert" 1, "vrt2" 1;
   -webkit-font-feature-settings: "vert" 1, "vrt2" 1;
   overflow-x: auto;
