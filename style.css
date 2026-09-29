@@ -417,8 +417,8 @@ select:focus, input:focus {
 textarea.vertical-mode {
   writing-mode: vertical-rl;
   -webkit-writing-mode: vertical-rl;
-  text-orientation: mixed;
-  -webkit-text-orientation: mixed;
+  text-orientation: upright;
+  -webkit-text-orientation: upright;
   font-feature-settings: "vert" 1, "vrt2" 1;
   -webkit-font-feature-settings: "vert" 1, "vrt2" 1;
   overflow-x: auto;
@@ -432,7 +432,7 @@ textarea.vertical-mode {
 
 .vertical-text {
   writing-mode: vertical-rl;
-  text-orientation: mixed; /* upright が指定されていたら mixed（初期値）に変更する */
+  text-orientation: upright; /* upright */
   font-feature-settings: "vert" 1, "vrt2" 1;
   -webkit-font-feature-settings: "vert" 1, "vrt2" 1;
 
