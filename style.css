@@ -413,12 +413,13 @@ select:focus, input:focus {
   border-color: var(--accent);
 }
 
+
+
 /* 縦書きテキストエリア */
 textarea.vertical-mode {
   writing-mode: vertical-rl;
   -webkit-writing-mode: vertical-rl;
-  text-orientation: upright;
-  /* -webkit-text-orientation: upright; */
+  text-orientation: upright !important;
   font-feature-settings: "vert" 1, "vrt2" 1;
   -webkit-font-feature-settings: "vert" 1, "vrt2" 1;
   overflow-x: auto;
@@ -432,7 +433,7 @@ textarea.vertical-mode {
 
 .vertical-text {
   writing-mode: vertical-rl;
-  text-orientation: upright; /* upright */
+  text-orientation: upright !important; /* upright */
   font-feature-settings: "vert" 1, "vrt2" 1;
   -webkit-font-feature-settings: "vert" 1, "vrt2" 1;
 
@@ -446,3 +447,4 @@ textarea.vertical-mode {
     "BIZ UDMincho", 
     serif;
 }
+
