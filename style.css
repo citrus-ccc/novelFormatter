@@ -253,3 +253,179 @@ textarea {
   .toolbar button#copyBtn { margin-left: 0 !important; }
 }
 
+
+/* --- ツールチップ (警告・注意ポップアップ) --- */
+.tooltip-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltip-wrap[data-tooltip]::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 8px 12px;
+  background: rgba(18, 22, 30, 0.95);
+  color: #f1f5f9;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  width: max-content;
+  max-width: 280px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 180, 50, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  z-index: 100;
+  text-align: left;
+}
+
+/* ツールチップの小さな三角形の矢印 */
+.tooltip-wrap[data-tooltip]::after {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  border-width: 6px 6px 0 6px;
+  border-style: solid;
+  border-color: rgba(18, 22, 30, 0.95) transparent transparent transparent;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  z-index: 100;
+}
+
+/* ホバー時にフワッと表示 */
+.tooltip-wrap:hover::before,
+.tooltip-wrap:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ライトテーマ時のツールチップ配色 */
+body.light-theme .tooltip-wrap[data-tooltip]::before {
+  background: #2a303c;
+  color: #ffffff;
+  border-color: rgba(220, 140, 20, 0.5);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+body.light-theme .tooltip-wrap[data-tooltip]::after {
+  border-color: #2a303c transparent transparent transparent;
+}
+
+/* --- 画像付きリッチツールチップ --- */
+.tooltip-container {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltip-popover {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  /* 右寄せ（ボタンの右端に揃えることで画面外への見切れを防止） */
+  right: 0;
+  width: 440px;
+  background: var(--panel, #1a1e27);
+  border: 1px solid rgba(255, 180, 50, 0.4);
+  border-radius: 10px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+  padding: 10px;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  z-index: 1000;
+}
+
+/* 小さな三角形の矢印（右下付近） */
+.tooltip-popover::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  right: 28px;
+  border-width: 6px 6px 0 6px;
+  border-style: solid;
+  border-color: var(--panel, #1a1e27) transparent transparent transparent;
+}
+
+/* ホバー時に表示 */
+.tooltip-container:hover .tooltip-popover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.tooltip-img {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  display: block;
+  border: 1px solid var(--border, #2c3442);
+}
+
+.tooltip-caption {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text, #eef2f7);
+  text-align: left;
+}
+
+.tooltip-caption strong {
+  color: #ffb432;
+}
+
+/* ライトテーマ時の配色調整 */
+body.light-theme .tooltip-popover {
+  background: #ffffff;
+  border-color: rgba(220, 140, 20, 0.4);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+body.light-theme .tooltip-popover::after {
+  border-color: #ffffff transparent transparent transparent;
+}
+
+
+/* フォーム入力要素（プルダウン・数値入力など）の共通スタイル */
+select, input[type="text"], input[type="number"] {
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+select:focus, input:focus {
+  border-color: var(--accent);
+}
+
+/* 縦書きテキストエリア */
+textarea.vertical-mode {
+  writing-mode: vertical-rl;
+  -webkit-writing-mode: vertical-rl;
+  text-orientation: mixed;
+  -webkit-text-orientation: mixed;
+  font-feature-settings: "vert" 1, "vrt2" 1;
+  -webkit-font-feature-settings: "vert" 1, "vrt2" 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  line-height: 2.1;
+  letter-spacing: 0.05em;
+  padding: 24px 20px;
+  white-space: pre-wrap;
+  direction: ltr;
+}

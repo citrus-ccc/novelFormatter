@@ -5,23 +5,117 @@ const OPEN_BRACKETS = '「『（(【〈《〔［｛';
 function isDialogue(line) {
   if (!line) return false;
   const trimmed = line.trim();
-  return trimmed.length > 0 && OPEN_BRACKETS.includes(trimmed[0]);
+  return trimmed.length > 0 && OPEN_BRACKETS.indexOf(trimmed.charAt(0)) !== -1;
+}
+
+// 区切り記号（シーンチェンジなど: ◇◇◇, ◆◆◆ など）の判定
+function isSceneBreak(line) {
+  const trimmed = line.trim().replace(/\s+/g, '');
+  if (trimmed.length < 2) return false;
+  return /^[◇◆■□▲△★☆＊*―ー\-]+$/.test(trimmed);
+}
+
+// 見出し行の判定
+function isHeadingLine(line, customSymbols) {
+  const trimmed = line.trim();
+  if (!trimmed) return false;
+
+  const symbols = (customSymbols || '#')
+    .split(/[,、]/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+
+  for (const sym of symbols) {
+    const escapedSym = sym.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp('^' + escapedSym + '+\\s*.+');
+    if (regex.test(trimmed)) return true;
+  }
+
+  if (/^第[0-9０-９一二三四五六七八九十百]+[章話節]/.test(trimmed)) return true;
+  if (/^[0-9０-９]{1,4}$/.test(trimmed)) return true;
+  if (/^[0-9０-９]{1,4}[\s:：・]/.test(trimmed)) return true;
+  if (/^[〇一二三四五六七八九]{1,4}[\s:：・]/.test(trimmed)) return true;
+  if (/^(プロローグ|エピローグ|はじめに|おわりに|あとがき|目次)$/.test(trimmed)) return true;
+
+  return false;
+}
+
+// 行頭から指定された見出し記号を削除
+function removeHeadingSymbols(str, customSymbols) {
+  if (!str) return '';
+  let res = str.trim();
+  const symbols = (customSymbols || '#')
+    .split(/[,、]/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+
+  for (const sym of symbols) {
+    const escapedSym = sym.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp('^' + escapedSym + '+\\s*', 'g');
+    res = res.replace(regex, '');
+  }
+  return res.trim();
+}
+
+// 結びの言葉（完、終、Finなど）の判定
+function isEndWordLine(line, customKeywords) {
+  const trimmed = line.trim();
+  if (!trimmed) return false;
+
+  const cleanWord = trimmed.replace(/^[（(【［「『―ー\s\u3000]+/, '')
+                           .replace(/[）)】］」』。.\s\u3000]+$/, '');
+
+  const words = (customKeywords || '完, 終, おわり, Fin')
+    .split(/[,、]/)
+    .map(w => w.trim().toLowerCase())
+    .filter(w => w.length > 0);
+
+  return words.some(w => cleanWord.toLowerCase() === w || trimmed.toLowerCase() === w);
+}
+
+// 英数字・記号を全角に変換（化物語スタイル）
+function toFullwidthHeading(str, customSymbols) {
+  if (!str) return '';
+  let prefix = '';
+  let content = str;
+
+  const symbols = (customSymbols || '#')
+    .split(/[,、]/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+
+  for (const sym of symbols) {
+    const escapedSym = sym.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const match = str.match(new RegExp('^(' + escapedSym + '+\\s+)(.*)$'));
+    if (match) {
+      prefix = match[1];
+      content = match[2];
+      break;
+    }
+  }
+
+  let converted = content.replace(/[A-Za-z0-9]/g, function(s) {
+    return String.fromCharCode(s.charCodeAt(0) + 0xFEE0);
+  });
+  converted = converted.replace(/:/g, '：');
+  converted = converted.replace(/\s+/g, ' ');
+  converted = converted.replace(/：\s*/g, '： ');
+
+  return prefix + converted;
 }
 
 // -------------------------------------------------------------
-// 縦書き用：数字を漢数字に変換（横書き → 縦書き）
+// 縦書き用：数字を漢数字に変換
 // -------------------------------------------------------------
 function convertToVerticalNumbers(text) {
   if (!text) return '';
 
   const digitMap = { '0': '〇', '1': '一', '2': '二', '3': '三', '4': '四', '5': '五', '6': '六', '7': '七', '8': '八', '9': '九' };
 
-  // 1. 西暦（4桁 + 年）: 2026年 → 二〇二六年
-  text = text.replace(/([12]\d{3})年/g, (match, p1) => {
-    return p1.split('').map(d => digitMap[d]).join('') + '年';
+  text = text.replace(/([12]\d{3})年/g, function(match, p1) {
+    return p1.split('').map(function(d) { return digitMap[d]; }).join('') + '年';
   });
 
-  // 2. 整数を漢数字（位取り：十、百、千）に変換
   function numToKanji(n) {
     const num = parseInt(n, 10);
     if (isNaN(num)) return n;
@@ -29,7 +123,6 @@ function convertToVerticalNumbers(text) {
 
     const kanjiDigits = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
     let res = '';
-    
     const th = Math.floor(num / 1000);
     if (th > 0) res += (th === 1 ? '' : kanjiDigits[th]) + '千';
     const hu = Math.floor((num % 1000) / 100);
@@ -42,25 +135,21 @@ function convertToVerticalNumbers(text) {
     return res;
   }
 
-  // 3. 「12、3人」のような概数表記
-  text = text.replace(/(\d+)、(\d+)([人回度個])/g, (match, p1, p2, unit) => {
+  text = text.replace(/(\d+)、(\d+)([人回度個])/g, function(match, p1, p2, unit) {
     return numToKanji(p1) + '、' + numToKanji(p2) + unit;
   });
 
-  // 4. 時刻・分（例: 10時30分 → 十時三〇分 / 30分 → 三〇分）
-  text = text.replace(/(\d+)時(\d+)分/g, (match, h, m) => {
-    const minStr = m.split('').map(d => digitMap[d]).join('');
+  text = text.replace(/(\d+)時(\d+)分/g, function(match, h, m) {
+    const minStr = m.split('').map(function(d) { return digitMap[d]; }).join('');
     return numToKanji(h) + '時' + minStr + '分';
   });
-  text = text.replace(/(\d+)分/g, (match, m) => {
-    const minStr = m.split('').map(d => digitMap[d]).join('');
+  text = text.replace(/(\d+)分/g, function(match, m) {
+    const minStr = m.split('').map(function(d) { return digitMap[d]; }).join('');
     return minStr + '分';
   });
 
-  // 5. 助数詞（番、人、回、歳、時、日、ヶ月など）
-  // ※km, m, cm, kg, 号, 秒, 台 などは縦中横で活かすため半角維持
   const targetCounterRegex = /(\d+)(番|人|回|歳|時|日|ヶ月|カ月|か月|ケ月|組|名)/g;
-  text = text.replace(targetCounterRegex, (match, p1, unit) => {
+  text = text.replace(targetCounterRegex, function(match, p1, unit) {
     return numToKanji(p1) + unit;
   });
 
@@ -68,30 +157,25 @@ function convertToVerticalNumbers(text) {
 }
 
 // -------------------------------------------------------------
-// 横書き用：漢数字を算用数字に変換（縦書き → 横書き強制変換）
+// 横書き用：漢数字を算用数字に変換
 // -------------------------------------------------------------
 function convertToHorizontalNumbers(text) {
   if (!text) return '';
 
   const kanjiMap = { '〇': '0', '一': '1', '二': '2', '三': '3', '四': '4', '五': '5', '六': '6', '七': '7', '八': '8', '九': '9' };
 
-  // 1. 西暦（二〇二六年 → 2026年）
-  text = text.replace(/([一二][〇一二三四五六七八九]{3})年/g, (match, p1) => {
-    return p1.split('').map(k => kanjiMap[k]).join('') + '年';
-  });
-
-  // 2. 漢数字を数値文字列に変換
   function kanjiToNum(kStr) {
     if (!kStr) return '';
     if (/^[〇一二三四五六七八九]+$/.test(kStr)) {
-      return kStr.split('').map(k => kanjiMap[k]).join('');
+      return kStr.split('').map(function(k) { return kanjiMap[k]; }).join('');
     }
 
     let total = 0;
     let current = 0;
     const digits = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9 };
 
-    for (let char of kStr) {
+    for (let i = 0; i < kStr.length; i++) {
+      const char = kStr[i];
       if (digits[char] !== undefined) {
         current = digits[char];
       } else if (char === '千') {
@@ -109,38 +193,73 @@ function convertToHorizontalNumbers(text) {
     return String(total);
   }
 
-  // 3. 概数表記（例: 十二、三人 → 12、3人）
-  text = text.replace(/([一二三四五六七八九十百千]+)、([一二三四五六七八九]+)([人回度個])/g, (match, p1, p2, unit) => {
-    return kanjiToNum(p1) + '、' + kanjiToNum(p2) + unit;
+  const protectedWords = ['十日町', '四日市', '二日市', '八戸', '一関', '三条', '六本木', '九州', '四国'];
+  const placeholders = {};
+  protectedWords.forEach(function(word, idx) {
+    const key = `__PROTECTED_WORD_${idx}__`;
+    if (text.includes(word)) {
+      placeholders[key] = word;
+      text = text.split(word).join(key);
+    }
   });
 
-  // 4. 時刻・分（例: 十時三〇分 → 10時30分 / 三〇分 → 30分）
-  text = text.replace(/([一二三四五六七八九十]+)時([〇一二三四五六七八九十]+)分/g, (match, h, m) => {
+  text = text.replace(/([一二][〇一二三四五六七八九]{3})年/g, function(match, p1) {
+    return p1.split('').map(function(k) { return kanjiMap[k]; }).join('') + '年';
+  });
+
+  text = text.replace(/([一二三四五六七八九十]+)月/g, function(match, m) {
+    return kanjiToNum(m) + '月';
+  });
+
+  text = text.replace(/([一二三四五六七八九十]+)時([〇一二三四五六七八九十]+)分/g, function(match, h, m) {
     return kanjiToNum(h) + '時' + kanjiToNum(m) + '分';
   });
-  text = text.replace(/([〇一二三四五六七八九十]+)分/g, (match, m) => {
+  text = text.replace(/([〇一二三四五六七八九十]+)分/g, function(match, m) {
     return kanjiToNum(m) + '分';
   });
 
-  // 5. 助数詞
-  const kanjiCounterRegex = /([一二三四五六七八九十百千]+)(番|回|歳|時|日|ヶ月|カ月|か月|ケ月|組|名)/g;
-  text = text.replace(kanjiCounterRegex, (match, p1, unit) => {
+  text = text.replace(/([一二三四五六七八九十百千]+)、([一二三四五六七八九]+)([人回度個])/g, function(match, p1, p2, unit) {
+    return kanjiToNum(p1) + '、' + kanjiToNum(p2) + unit;
+  });
+
+  const kanjiCounterRegex = /([一二三四五六七八九十百千]+)(番|回|歳|時|日|月|ヶ月|カ月|か月|ケ月|組|名|ミリ|メートル|キロ|本|枚|個|件|ページ|％|パーセント)/g;
+  text = text.replace(kanjiCounterRegex, function(match, p1, unit) {
     return kanjiToNum(p1) + unit;
   });
 
-  // 人数（「一人」「二人」は除外）
-  text = text.replace(/([三四五六七八九十百千]+)人/g, (match, p1) => {
+  text = text.replace(/([三四五六七八九十百千]+)人/g, function(match, p1) {
     return kanjiToNum(p1) + '人';
   });
 
-  // 全角数字を半角に統一
-  text = text.replace(/[０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+  text = text.replace(/[０-９]/g, function(s) {
+    return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+  });
+
+  Object.keys(placeholders).forEach(function(key) {
+    text = text.split(key).join(placeholders[key]);
+  });
 
   return text;
 }
 
 // -------------------------------------------------------------
-// 整形ロジック本体（空行ルールの完全統一）
+// ルビ・傍点変換
+// -------------------------------------------------------------
+function convertToNarouRuby(text) {
+  return text.replace(/《《([^》]+)》》/g, function(match, p1) {
+    return p1.split('').map(function(char) { return '｜' + char + '《・》'; }).join('');
+  });
+}
+
+function convertToKakuyomuRuby(text) {
+  return text.replace(/(｜[^《]+《・》)+/g, function(match) {
+    const chars = match.match(/([^｜《]+)《・》/g).map(function(s) { return s.replace('《・》', ''); });
+    return '《《' + chars.join('') + '》》';
+  });
+}
+
+// -------------------------------------------------------------
+// 整形ロジック本体
 // -------------------------------------------------------------
 function formatNovelText(text) {
   if (!text) return '';
@@ -149,72 +268,112 @@ function formatNovelText(text) {
   const optBlockBlank = document.getElementById('optBlockBlank');
   const optTrimDialogueBlank = document.getElementById('optTrimDialogueBlank');
   const optRemoveHeadings = document.getElementById('optRemoveHeadings');
+  const optHeadingSymbol = document.getElementById('optHeadingSymbol');
   const optVerticalMode = document.getElementById('optVerticalMode');
+  const optFullwidthHeading = document.getElementById('optFullwidthHeading');
+  const optHeadingBlankLines = document.getElementById('optHeadingBlankLines');
+  const optEndWord = document.getElementById('optEndWord');
+  const optEndBlankLines = document.getElementById('optEndBlankLines');
+  const optRubyFormat = document.getElementById('optRubyFormat');
+
+  // ルビ変換の適用（プルダウン判定）
+  if (optRubyFormat) {
+    if (optRubyFormat.value === 'narou') {
+      text = convertToNarouRuby(text);
+    } else if (optRubyFormat.value === 'kakuyomu') {
+      text = convertToKakuyomuRuby(text);
+    }
+  }
 
   const useIndent = optIndent ? optIndent.checked : true;
-  const useBlockBlank = optBlockBlank ? optBlockBlank.checked : true;
-  const trimDialogueBlank = optTrimDialogueBlank ? optTrimDialogueBlank.checked : true;
-  const removeHeadings = optRemoveHeadings ? optRemoveHeadings.checked : false;
   const isVertical = optVerticalMode ? optVerticalMode.checked : false;
+  const useFullwidthHeading = optFullwidthHeading ? optFullwidthHeading.checked : false;
+  const removeHeadings = optRemoveHeadings ? optRemoveHeadings.checked : false;
 
-  // 縦書き/横書きの数字ルール
+  const customHeadingSymbols = optHeadingSymbol ? optHeadingSymbol.value.trim() : '#';
+  const headingBlankCount = optHeadingBlankLines ? Math.max(0, parseInt(optHeadingBlankLines.value, 10) || 0) : 1;
+  const endKeywords = optEndWord ? optEndWord.value : '完, 終, おわり, Fin';
+  const endBlankCount = optEndBlankLines ? Math.max(0, parseInt(optEndBlankLines.value, 10) || 0) : 3;
+
+  const useBlockBlank = isVertical ? false : (optBlockBlank ? optBlockBlank.checked : true);
+  const trimDialogueBlank = isVertical ? true : (optTrimDialogueBlank ? optTrimDialogueBlank.checked : true);
+
   if (isVertical) {
     text = convertToVerticalNumbers(text);
+    // 三点リーダーを正式な偶数個の「……」に統一
+    text = text.replace(/([.．]{3,}|…+)/g, function(match) {
+      const count = Math.max(2, Math.round(match.length / 3) * 2);
+      return '…'.repeat(count % 2 === 0 ? count : count + 1);
+    });
   } else {
     text = convertToHorizontalNumbers(text);
   }
 
-  // 1. 各行をトリミングし、元の空行を一度全リセットして有効行のみ抽出
+  // 1. 各行の解析
   const rawLines = text.split(/\r?\n/);
-  const parsedLines = [];
+  const parsedItems = [];
 
-  for (let raw of rawLines) {
-    let line = raw.trim();
+  for (let i = 0; i < rawLines.length; i++) {
+    let line = rawLines[i].trim();
+    if (line === '') continue;
 
-    if (removeHeadings && /^#+\s*/.test(line)) {
-      line = line.replace(/^#+\s*/, '');
+    const isHeading = isHeadingLine(line, customHeadingSymbols);
+    const isScene = isSceneBreak(line);
+    const isEnd = isEndWordLine(line, endKeywords);
+
+    if (isHeading && removeHeadings) {
+      line = removeHeadingSymbols(line, customHeadingSymbols);
+    }
+
+    if (isHeading && useFullwidthHeading) {
+      line = toFullwidthHeading(line, customHeadingSymbols);
     }
 
     if (line !== '') {
-      parsedLines.push(line);
+      parsedItems.push({
+        text: line,
+        isHeading: isHeading,
+        isSceneBreak: isScene,
+        isEndWord: isEnd
+      });
     }
   }
 
-  // 2. 業界標準ルールに基づいて空行を再構築
+  // 2. 空行の再構築
   const result = [];
 
-  for (let i = 0; i < parsedLines.length; i++) {
-    const line = parsedLines[i];
-    const prevLine = i > 0 ? parsedLines[i - 1] : null;
+  for (let i = 0; i < parsedItems.length; i++) {
+    const item = parsedItems[i];
+    const prevItem = i > 0 ? parsedItems[i - 1] : null;
 
-    const currentIsDialogue = isDialogue(line);
-    const prevIsDialogue = prevLine ? isDialogue(prevLine) : false;
-    const isHeading = /^#+/.test(line);
-    const prevIsHeading = prevLine ? /^#+/.test(prevLine) : false;
+    const currentIsDialogue = isDialogue(item.text);
+    const prevIsDialogue = prevItem ? isDialogue(prevItem.text) : false;
 
-    // 前の行との境界判定
-    if (prevLine !== null) {
-      if (isHeading || prevIsHeading) {
-        // 見出しの前後には必ず空行
+    if (prevItem !== null) {
+      if (item.isEndWord) {
+        for (let b = 0; b < endBlankCount; b++) {
+          result.push('');
+        }
+      } else if (item.isSceneBreak || prevItem.isSceneBreak) {
         result.push('');
+      } else if (item.isHeading || prevItem.isHeading) {
+        for (let b = 0; b < headingBlankCount; b++) {
+          result.push('');
+        }
       } else if (currentIsDialogue && prevIsDialogue) {
-        // 会話文から会話文へ続く場合
         if (!trimDialogueBlank) {
-          result.push(''); // 会話詰めOFF時のみ空行
+          result.push('');
         }
       } else if (currentIsDialogue !== prevIsDialogue) {
-        // 地の文 ⇔ 会話文 の境界
         if (useBlockBlank) {
           result.push('');
         }
       }
-      // 地の文 ⇔ 地の文 は空行を入れず、字下げで繋ぐ（完全統一）
     }
 
-    // 字下げ処理
-    let formattedLine = line;
-    if (useIndent && !currentIsDialogue && !isHeading) {
-      formattedLine = FULLWIDTH_SPACE + line.replace(/^[\s\u3000]+/, '');
+    let formattedLine = item.text;
+    if (useIndent && !currentIsDialogue && !item.isHeading && !item.isSceneBreak && !item.isEndWord) {
+      formattedLine = FULLWIDTH_SPACE + formattedLine.replace(/^[\s\u3000]+/, '');
     }
 
     result.push(formattedLine);
@@ -224,44 +383,54 @@ function formatNovelText(text) {
 }
 
 // -------------------------------------------------------------
-// ルビ変換
-// -------------------------------------------------------------
-function convertToNarouRuby(text) {
-  return text.replace(/《《([^》]+)》》/g, (match, p1) => {
-    return p1.split('').map(char => `｜${char}《・》`).join('');
-  });
-}
-
-function convertToKakuyomuRuby(text) {
-  return text.replace(/(｜[^《]+《・》)+/g, (match) => {
-    const chars = match.match(/([^｜《]+)《・》/g).map(s => s.replace('《・》', ''));
-    return `《《${chars.join('')}》》`;
-  });
-}
-
-// -------------------------------------------------------------
 // アプリ初期化
 // -------------------------------------------------------------
 function initApp() {
   const inputText = document.getElementById('inputText');
   const outputText = document.getElementById('outputText');
   const outputStatus = document.getElementById('outputStatus');
+  const optVerticalMode = document.getElementById('optVerticalMode');
+  const verticalGuideBadge = document.getElementById('verticalGuideBadge');
 
-  const setStatus = (msg, cls) => {
+  const setStatus = function(msg, cls) {
     if (outputStatus) {
       outputStatus.textContent = msg;
       outputStatus.className = 'status ' + (cls || '');
     }
   };
 
-  const executeFormat = (customConverter = null, statusMsg = '整形完了') => {
+  const updateVerticalView = () => {
+    if (!optVerticalMode) return;
+    const isVertical = optVerticalMode.checked;
+
+    if (verticalGuideBadge) {
+      verticalGuideBadge.style.display = isVertical ? 'inline-block' : 'none';
+    }
+
+    if (outputText) {
+      if (isVertical) {
+        outputText.classList.add('vertical-mode');
+        setTimeout(() => {
+          outputText.scrollLeft = outputText.scrollWidth;
+          outputText.scrollTop = 0;
+        }, 50);
+      } else {
+        outputText.classList.remove('vertical-mode');
+        outputText.scrollLeft = 0;
+        outputText.scrollTop = 0;
+      }
+    }
+  };
+
+  optVerticalMode?.addEventListener('change', updateVerticalView);
+  updateVerticalView();
+
+  const executeFormat = function(statusMsg) {
+    statusMsg = statusMsg || '整形完了';
     try {
       if (!inputText || !outputText) return;
-      let val = inputText.value;
-      if (customConverter) {
-        val = customConverter(val);
-      }
-      outputText.value = formatNovelText(val);
+      outputText.value = formatNovelText(inputText.value);
+      updateVerticalView();
       setStatus(statusMsg, 'ok');
     } catch (err) {
       console.error(err);
@@ -269,20 +438,13 @@ function initApp() {
     }
   };
 
-  // ボタンイベント設定
-  document.getElementById('formatBtn')?.addEventListener('click', () => {
-    executeFormat(null, '整形完了');
+  // ✨ 整形するボタン（単一トリガー）
+  document.getElementById('formatBtn')?.addEventListener('click', function() {
+    executeFormat('整形完了');
   });
 
-  document.getElementById('convertNarouBtn')?.addEventListener('click', () => {
-    executeFormat(convertToNarouRuby, 'なろう形式(傍点変換済)にしました');
-  });
-
-  document.getElementById('convertKakuyomuBtn')?.addEventListener('click', () => {
-    executeFormat(convertToKakuyomuRuby, 'カクヨム形式にしました');
-  });
-
-  document.getElementById('copyBtn')?.addEventListener('click', async () => {
+  // 📋 結果をコピー
+  document.getElementById('copyBtn')?.addEventListener('click', async function() {
     if (!outputText) return;
     const text = outputText.value;
     if (!text) {
@@ -293,7 +455,7 @@ function initApp() {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(text);
       } else {
-        const textArea = document.createElement("textarea");
+        const textArea = document.createElement('textarea');
         textArea.value = text;
         document.body.appendChild(textArea);
         textArea.select();
@@ -306,22 +468,61 @@ function initApp() {
     }
   });
 
-  // --- ヘルプモーダル制御 ---
+  // 📚 EPUB出力
+  document.getElementById('exportEpubBtn')?.addEventListener('click', async function() {
+    if (!window.NovelEpub) {
+      setStatus('EPUB生成モジュールが読み込まれていません', 'err');
+      return;
+    }
+
+    let text = outputText?.value;
+    if (!text && inputText?.value) {
+      executeFormat('整形完了');
+      text = outputText.value;
+    }
+
+    if (!text) {
+      setStatus('出力する原稿がありません', 'err');
+      return;
+    }
+
+    const isVertical = optVerticalMode?.checked ?? false;
+    const useFullwidthHeading = document.getElementById('optFullwidthHeading')?.checked ?? false;
+    
+    const firstLine = text.trim().split('\n')[0].replace(/^#+\s*/, '').trim();
+    const defaultTitle = firstLine.slice(0, 30) || '無題の作品';
+    const title = prompt('EPUBのタイトルを入力してください:', defaultTitle);
+    if (title === null) return;
+
+    try {
+      setStatus('EPUB生成中...', '');
+      await window.NovelEpub.generateAndDownload(text, {
+        title: title.trim() || '無題の作品',
+        isVertical: isVertical,
+        useFullwidthHeading: useFullwidthHeading
+      });
+      setStatus('EPUBを出力しました！', 'ok');
+    } catch (err) {
+      console.error(err);
+      setStatus('EPUB生成に失敗しました', 'err');
+    }
+  });
+
+  // ヘルプモーダル制御
   const helpModal = document.getElementById('helpModal');
   const helpOpenBtn = document.getElementById('helpOpenBtn');
   const helpCloseBtn = document.getElementById('helpCloseBtn');
 
   if (helpModal && helpOpenBtn && helpCloseBtn) {
-    helpOpenBtn.addEventListener('click', () => {
+    helpOpenBtn.addEventListener('click', function() {
       helpModal.showModal();
     });
 
-    helpCloseBtn.addEventListener('click', () => {
+    helpCloseBtn.addEventListener('click', function() {
       helpModal.close();
     });
 
-    // モーダル背景クリックで閉じる
-    helpModal.addEventListener('click', (e) => {
+    helpModal.addEventListener('click', function(e) {
       const rect = helpModal.getBoundingClientRect();
       const isInDialog = (
         rect.top <= e.clientY &&
@@ -335,7 +536,7 @@ function initApp() {
     });
   }
 
-  // --- テーマ切替 ---
+  // テーマ切替
   const themeToggleBtn = document.getElementById('themeToggleBtn');
   if (themeToggleBtn) {
     if (localStorage.getItem('novel-formatter-theme') === 'light') {
@@ -343,7 +544,7 @@ function initApp() {
       themeToggleBtn.textContent = '🌙 ダークテーマ';
     }
 
-    themeToggleBtn.addEventListener('click', () => {
+    themeToggleBtn.addEventListener('click', function() {
       document.body.classList.toggle('light-theme');
       if (document.body.classList.contains('light-theme')) {
         localStorage.setItem('novel-formatter-theme', 'light');
@@ -356,7 +557,6 @@ function initApp() {
   }
 }
 
-// 読み込み実行
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
 } else {
